@@ -15,9 +15,10 @@ with open("cfg/settings.cfg") as a:
         LIM_Y = int(a[2].split("=")[1])
         SIZEX = int(a[3].split("=")[1])
         SIZEY = int(a[4].split("=")[1])
-        difficulty = int(a[5].split("=")[1]) 
+        difficulty = int(a[5].split("=")[1])
+        CHANCE = float(a[6].split("=")[1])
     except Exception:
-        FPS, LIM_X, LIM_Y, SIZEX, SIZEY, difficulty = 24, 8, 4, 10, 6, 3
+        FPS, LIM_X, LIM_Y, SIZEX, SIZEY, difficulty, CHANCE = 24, 8, 4, 10, 6, 3, 0.12
     
 result = 0
 SPRITES = [sprites, roads, base, weathers]
@@ -107,7 +108,7 @@ running = True
 
 level = Map(SIZEX, SIZEY)
 level.generateTerrain()
-level.createGenerators(0.25)
+level.createGenerators(CHANCE)
 level.createWeather()
 level.readMap()
 level.getMatrix()

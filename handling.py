@@ -13,7 +13,7 @@ custom = True
 with open("cfg/settings.cfg") as a:
     try:
         a = a.readlines()
-        path = a[6].split("=")[-1].strip()
+        path = a[7].split("=")[-1].strip()
         print(path)
         assert path.startswith("maps")
     except Exception:
