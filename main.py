@@ -109,7 +109,7 @@ def game_finished(): # определить исход игры при ее за
     global result
     if level.cntGens == level.cntActive and (level.player.x, level.player.y) == level.exit:
         result = 2    
-    if (level.player.hp <= 0 or level.player.health <= 0
+    if ((level.player.hp <= 0 or level.player.health <= 0)
         and not (level.cntGens == level.cntActive and (level.player.x, level.player.y) == level.exit 
         and level.player.hp == 0)):
         result = 1  
@@ -130,7 +130,11 @@ level.readMap()
 level.getMatrix()
 level.getDijkstra()
 heuristic_min_moves = level.getKruskal()
-print(heuristic_min_moves)
+
+x, y = level.entry
+heuristic_min_moves -= level.level[x][y].movementPoints
+level.level[x][y].movementPoints = 0
+
 initial = level.player.hp = evaluate(heuristic_min_moves, launchParams["difficulty"])
 level.player.health = 100
 

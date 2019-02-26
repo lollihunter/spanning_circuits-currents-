@@ -55,7 +55,6 @@ class Map:
         for i in range(self.width):
             for j in range(self.height):
                 for k in worldgen:
-                    print(self.mapProfile.value[i][j])
                     if self.mapProfile.value[i][j] < worldgen[k]: 
                         self.level[i][j] = Tile(k)
                         break
