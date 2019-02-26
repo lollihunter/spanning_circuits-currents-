@@ -9,16 +9,19 @@ from save import *
 from cfgReader import *
 import time
 
+# Основные параметры
 
 params = {"fps": 24,
           "LIM_X": 8,
           "LIM_Y": 4,
-          "SIZEX": 10,
-          "SIZEY": 6,
-          "difficulty": 3,
-          "CHANCE": 0.12}
+          "SIZEX": 10, # размер в ширину
+          "SIZEY": 6, # размер в длину
+          "difficulty": 3, # чем меньше - тем сложнее
+          "CHANCE": 0.12} # шанс генерации генератора
 
 params_cfg = cfgread()
+# прочитать settings.cfg и попытаться заменить дефолтные значения
+
 for param in params:
     try:
         params[param] = params_cfg[param]
@@ -31,7 +34,7 @@ SPRITES = [sprites, roads, base, weathers]
 directions = {pygame.K_RIGHT: (1, 0), pygame.K_LEFT: (-1, 0),
               pygame.K_UP: (0, -1), pygame.K_DOWN: (0, 1),
               pygame.K_d: (1, 0), pygame.K_a: (-1, 0),
-              pygame.K_w: (0, -1), pygame.K_s: (0, 1),}
+              pygame.K_w: (0, -1), pygame.K_s: (0, 1),} # передвижение по полю при нажатии кнопки
 
 pygame.font.init()
 
@@ -40,9 +43,9 @@ class Camera:
     
     def __init__(self):
         self.relativex = 3
-        self.relativey = 3
+        self.relativey = 3 # позиция относительно левого верхнего края окна
  
-    def update(self, dx, dy):
+    def update(self, dx, dy): # сдвинуть игрока и камеру соответственно
         
         if dx != 0:
             
@@ -67,7 +70,7 @@ class Camera:
                     
         level.player.moves(dx, dy, self.relativex, self.relativey)
     
-    def shift_view(self, dx, dy):
+    def shift_view(self, dx, dy): # сдвинуть камеру без движения игрока
         
         self.relativex -= dx
         self.relativey -= dy
@@ -79,14 +82,14 @@ class Camera:
         
 
 
-def check_bounds(x, y):
+def check_bounds(x, y): # проверить возможность прохождения клетки
     global levels
     return (0 <= x + level.player.x < params["SIZEX"] and
             0 <= y + level.player.y < params["SIZEY"] and
             level.level[x + level.player.x][y + level.player.y].passable)
 
 
-def update_gui():
+def update_gui(): # здоровье, энергия, количество генераторов
     myfont = pygame.font.SysFont('Arial Black', 20)
     text1 = myfont.render(f"{level.player.hp}", False, (255, 255, 255))
     text2 = myfont.render(f"{level.cntGens - level.cntActive}", False, (255, 255, 255))
@@ -96,7 +99,7 @@ def update_gui():
     screen.blit(text3, (100, HEIGHT - 75))
         
 
-def game_finished():
+def game_finished(): # определить исход игры при ее завершении
     global result
     if level.cntGens == level.cntActive and (level.player.x, level.player.y) == level.exit:
         result = 2    
@@ -206,20 +209,20 @@ while running:
         if pygame.key.get_pressed()[pygame.K_q]:
             save_map(level)
             
-        for key in pygame.K_RIGHT, pygame.K_LEFT, pygame.K_UP, pygame.K_DOWN:
+        for key in pygame.K_RIGHT, pygame.K_LEFT, pygame.K_UP, pygame.K_DOWN: # сдвинуть игрока
             if pygame.key.get_pressed()[key]:
                 if not check_bounds(*directions[key]):
                     break
                 camera.update(*directions[key])
-                level.playerInteract()
-                level.updateGens()                
+                level.playerInteract() # поменять клетки на поле
+                level.updateGens() # обновить работоспособность генератора               
                 
                 
-        for key in pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d:
+        for key in pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d: # сдвинуть камеру
             if pygame.key.get_pressed()[key]:
                 camera.shift_view(*directions[key])    
                 
-        
+    # обновить спрайты    
     screen.fill((0, 0, 0))
     for bases in base:
         if type(bases) == WaterSprite:
@@ -230,12 +233,14 @@ while running:
     for w in weathers:
         w.moves(0, 0)
     level.player.upd()
-            
+    
+    # перенести спрайты        
     base.draw(screen)
     sprites.draw(screen)
     players.draw(screen)
     weathers.draw(screen)
     roads.draw(screen)
+    
     im = load_image("gui.png")   
     screen.blit(im, (40, HEIGHT - 90))
     update_gui()
