@@ -5,20 +5,26 @@ from kruskal import *
 from dijkstra import *
 from handling import *
 from math_thingies import *
+from save import *
+from cfgReader import *
 import time
 
-with open("cfg/settings.cfg") as a:
+
+params = {"fps": 24,
+          "LIM_X": 8,
+          "LIM_Y": 4,
+          "SIZEX": 10,
+          "SIZEY": 6,
+          "difficulty": 3,
+          "CHANCE": 0.12}
+
+params_cfg = cfgread()
+for param in params:
     try:
-        a = a.readlines()
-        FPS = int(a[0].split("=")[1])
-        LIM_X = int(a[1].split("=")[1])
-        LIM_Y = int(a[2].split("=")[1])
-        SIZEX = int(a[3].split("=")[1])
-        SIZEY = int(a[4].split("=")[1])
-        difficulty = int(a[5].split("=")[1])
-        CHANCE = float(a[6].split("=")[1])
-    except Exception:
-        FPS, LIM_X, LIM_Y, SIZEX, SIZEY, difficulty, CHANCE = 24, 8, 4, 10, 6, 3, 0.12
+        params[param] = params_cfg[param]
+    except KeyError:
+        pass
+        
     
 result = 0
 SPRITES = [sprites, roads, base, weathers]
@@ -40,8 +46,8 @@ class Camera:
         
         if dx != 0:
             
-            if (1 < self.relativex + dx < LIM_X) or not \
-           (2 < level.player.x < SIZEX - 3):
+            if (1 < self.relativex + dx < params["LIM_X"]) or not \
+           (2 < level.player.x < params["SIZEX"] - 3):
                 self.relativex += dx
         
             else:
@@ -50,8 +56,8 @@ class Camera:
                         member.moves(-dx, -dy)                
         else:
             
-            if (1 < self.relativey + dy < LIM_Y) or not \
-           (2 < level.player.y < SIZEY - 3):
+            if (1 < self.relativey + dy < params["LIM_Y"]) or not \
+           (2 < level.player.y < params["SIZEY"] - 3):
                 self.relativey += dy            
             
             else:
@@ -75,8 +81,8 @@ class Camera:
 
 def check_bounds(x, y):
     global levels
-    return (0 <= x + level.player.x < SIZEX and
-            0 <= y + level.player.y < SIZEY and
+    return (0 <= x + level.player.x < params["SIZEX"] and
+            0 <= y + level.player.y < params["SIZEY"] and
             level.level[x + level.player.x][y + level.player.y].passable)
 
 
@@ -97,8 +103,10 @@ def game_finished():
     if (level.player.hp <= 0 or
         level.player.health <= 0):
         result = 1
+    if level.cntGens == level.cntActive and (level.player.x, level.player.y) == level.exit and level.player.hp == 0:
+        result = 2  
     return result
-        
+
    
 pygame.init()
 size = WIDTH, HEIGHT = 97 * 10, 97 * 6
@@ -106,16 +114,16 @@ color = (0, 0, 0)
 screen = pygame.display.set_mode(size)
 running = True
 
-level = Map(SIZEX, SIZEY)
+level = Map(params["SIZEX"], params["SIZEY"])
 level.generateTerrain()
-level.createGenerators(CHANCE)
+level.createGenerators(params["CHANCE"])
 level.createWeather()
 level.readMap()
 level.getMatrix()
 level.getDijkstra()
 heuristic_min_moves = level.getKruskal()
 print(heuristic_min_moves)
-initial = level.player.hp = evaluate(heuristic_min_moves, difficulty)
+initial = level.player.hp = evaluate(heuristic_min_moves, params["difficulty"])
 level.player.health = 100
 
 camera = Camera()
@@ -156,7 +164,7 @@ def start_screen():
                     event.type == pygame.MOUSEBUTTONDOWN:
                 return
         pygame.display.flip()
-        clock.tick(FPS)
+        clock.tick(params["fps"])
         
 def end_screen():
     
@@ -188,12 +196,15 @@ start_screen()
 
 while running:    
     
-    clock.tick(FPS)
+    clock.tick(params["fps"])
     
     for event in pygame.event.get():
         
         if event.type == pygame.QUIT:
             running = False
+            
+        if pygame.key.get_pressed()[pygame.K_q]:
+            save_map(level)
             
         for key in pygame.K_RIGHT, pygame.K_LEFT, pygame.K_UP, pygame.K_DOWN:
             if pygame.key.get_pressed()[key]:

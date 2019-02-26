@@ -26,12 +26,14 @@ def generate(width, height):
 def from_file(path, width, height):
     f = open(path).read().split()
     value, mount, weather, genmap = [], [], [], []
-    cnt = 0
+    coords = int(f[0]), int(f[1])
+    cnt = 2
     for y in range(height):
         value.append([0] * width)
         mount.append([0] * width)
         weather.append([0] * width)
         genmap.append([0] * width)
+        
         for x in range(width):
             value[y][x] = float(f[cnt])
             mount[y][x] = float(f[cnt + 1])
@@ -39,5 +41,5 @@ def from_file(path, width, height):
             genmap[y][x] = float(f[cnt + 3])
             cnt += 4
             
-    return value, mount, weather, genmap
+    return value, mount, weather, genmap, coords
     

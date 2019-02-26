@@ -1,5 +1,5 @@
 properties = {
-    "jungle": (3, True, -1),
+    "jungle": (5, True, -1),
     "water": (1, True, -1),
     "grass": (1, True, -1),
     "forest": (2, True, -1),
@@ -20,12 +20,12 @@ tile_paths = {
 }
 
 worldgen = {
-    0.3: "water",
-    0.5: "desert",
-    0.65: "grass",
-    0.75: "forest",
-    0.8: "jungle",
-    1: "mountain"
+    "water": 0.4,
+    "desert": 0.5,
+    "grass": 0.6,
+    "forest": 0.7,
+    "jungle": 0.8,
+    "mountain": 1,
 }
 
 class Tile:

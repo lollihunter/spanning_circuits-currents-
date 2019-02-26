@@ -6,19 +6,31 @@ from dijkstra import *
 from sprites import *
 from math_thingies import get_starting_pixel
 from noise_generation import *
+from cfgReader import *
+
 
 
 custom = True
+terrain_data = cfgread()
 
-with open("cfg/settings.cfg") as a:
+
+try:
+    path = terrain_data["path"]
+    assert path.startswith("maps/")
+except Exception:
+    custom = False
+    
+for tile_type in worldgen:
     try:
-        a = a.readlines()
-        path = a[7].split("=")[-1].strip()
-        print(path)
-        assert path.startswith("maps")
-    except Exception:
-        custom = False
-        
+        worldgen[tile_type] = terrain_data[tile_type]
+    except KeyError:
+        pass
+
+try:
+    moisture = terrain_data["moisture"]
+except KeyError:
+    moisture = 0.7
+
 
 class Board:
     
@@ -57,8 +69,9 @@ class Map:
         self.cntGens = 0
         self.cntActive = 0
         if custom:
-            self.values, self.mount, self.weather, self.genmap = from_file(path, self.height, self.width)
+            self.values, self.mount, self.weather, self.genmap, self.exit_coords = from_file(path, self.height, self.width)
         else:    
+            self.exit_coords = (self.width - 1, randint(0, self.height - 1))            
             self.values, self.mount, self.weather, self.genmap = generate(self.height, self.width)
         self.level = [[0] * height for _ in range(width)]
         self.roadmap = [[0] * height for _ in range(width)]
@@ -72,15 +85,15 @@ class Map:
         for i in range(self.width):
             for j in range(self.height):
                 for k in worldgen:
-                    if self.values[i][j] < k: 
-                        self.level[i][j] = Tile(worldgen[k])
+                    if self.values[i][j] < worldgen[k]: 
+                        self.level[i][j] = Tile(k)
                         break
     
     
     def createWeather(self):
         for i in range(self.width):
             for j in range(self.height):
-                if self.values[i][j] > 0.7 and self.level[i][j].generator:
+                if self.values[i][j] > moisture and self.level[i][j].generator:
                     self.level[i][j].weather = "thunder"
                 
     
@@ -105,6 +118,9 @@ class Map:
                 
                     
     def readMap(self):
+                
+        self.exit = self.exit_coords
+        self.level[self.exit_coords[0]][self.exit_coords[1]] = Tile("grass")
         
         for i in range(self.width):
             for j in range(self.height):
@@ -127,7 +143,6 @@ class Map:
                 
         self.entry = (3, 3)
         self.roadmap[3][3] = 1
-        self.exit = (self.width - 1, randint(0, self.height - 1))
         sprites.add(ExitSprite(*self.exit, self))
         self.player = Player(*self.entry)        
         players.add(self.player)
@@ -152,12 +167,15 @@ class Map:
                 cntGen += self.level[i][j].generator
                 if self.level[i][j].generator is True:
                     self.gens.append((i, j))
-        
+                
         
         for gen in range(len(self.gens)):
+            
             initDijkstra(self.width, self.height)
             g = self.gens[gen]
             res = Dijkstra((g[0], g[1]), self.matrix)
+                
+            
             for i in range(len(res)):
                 for j in range(len(res[i])):
                     if (i, j) in self.gens and (i, j) != self.gens[gen]:
@@ -180,7 +198,7 @@ class Map:
         else:
             self.roadmap[x][y] = 1
             self.level[x][y].movementPoints = 0            
-        self.level[x][y].activated = int(0.8 * (self.width + self.height) ** 1.3)
+        self.level[x][y].activated = int(0.9 * (self.width + self.height) ** 1.07)
         for road in roads:
             road.update()
          
