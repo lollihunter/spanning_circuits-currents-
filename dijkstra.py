@@ -1,6 +1,6 @@
 from heapq import *
 
-class Data:
+class Data: # represent a graph edge as start, end, distance
     
     def __init__(self, dist, index):
         self.dist, self.index = dist, index
@@ -12,13 +12,13 @@ class Data:
         return str(self.dist)
     
 
-def initDijkstra(width, height):
+def initDijkstra(width, height): # initialize auxiliary arrays
     global dists, used
     dists = [[10 ** 8] * height for _ in range(width)]
     used = [[False] * height for _ in range(width)]
 
 
-def Dijkstra(begin, matrix):
+def Dijkstra(begin, matrix): # good old Dijkstra in O(n*logn) with heap
     global dists, used    
     priorities = []
     dists[begin[0]][begin[1]] = 0
@@ -40,4 +40,4 @@ def Dijkstra(begin, matrix):
                 if not used[to[0]][to[1]] and dists[to[0]][to[1]] > dist + dists[a][b]:                    
                     dists[to[0]][to[1]] = dist + dists[a][b]
                     heappush(priorities, Data(dists[to[0]][to[1]], to))
-    return dists
+    return dists # return array of distances to all positions from the starting point

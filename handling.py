@@ -11,89 +11,61 @@ from cfgReader import *
 
 
 custom = True
-terrain_data = cfgread()
+terrainData = cfgRead()
 
-
-try:
-    path = terrain_data["path"]
-    assert path.startswith("maps/")
+try: # Try to read map file data from config; if MAP = -1, then random generate
+    path = terrainData["MAP"]
+    assert path != -1
 except Exception:
     custom = False
     
-for tile_type in worldgen:
-    try:
-        worldgen[tile_type] = terrain_data[tile_type]
-    except KeyError:
-        pass
-
-try:
-    moisture = terrain_data["moisture"]
-except KeyError:
-    moisture = 0.7
+moisture = {"thunder": 0.7}
+overrideConfig(moisture, terrainData)
+moisture = moisture["thunder"]
 
 
-class Board:
-    
-    
-    def __init__(self, height, width, screen):
-        
-        self.width = width
-        self.height = height
-        self.left = 0
-        self.top = 0
-        self.cell_size = 80
-        self.screen = screen
- 
- 
-    def set_view(self, left, top, cell_size):
-        
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
-        
-        
-    def repopulate(self, level):
-        
-        for i in range(self.width):
-            for j in range(self.height):
-                tile_type = level.level[i][j].id_tile
-                loc = (self.left + j * self.cell_size,
-                        self.top + i * self.cell_size)
 
 class Map:
     
     
     def __init__(self, width, height):
+        
         self.width = width
         self.height = height
         self.cntGens = 0
         self.cntActive = 0
+        
         if custom:
-            self.values, self.mount, self.weather, self.genmap, self.exit_coords = from_file(path, self.height, self.width)
+            self.mapProfile, self.exitCoords = from_file(path, self.height, self.width)
         else:    
-            self.exit_coords = (self.width - 1, randint(0, self.height - 1))            
-            self.values, self.mount, self.weather, self.genmap = generate(self.height, self.width)
+            self.exitCoords = (self.width - 1, randint(0, self.height - 1))            
+            self.mapProfile = generate(self.height, self.width)
+        
         self.level = [[0] * height for _ in range(width)]
         self.roadmap = [[0] * height for _ in range(width)]
         
     
     def convert(self, i, j):
+        
         return self.height * i + self.width
     
         
     def generateTerrain(self):
+        
         for i in range(self.width):
             for j in range(self.height):
                 for k in worldgen:
-                    if self.values[i][j] < worldgen[k]: 
+                    print(self.mapProfile.value[i][j])
+                    if self.mapProfile.value[i][j] < worldgen[k]: 
                         self.level[i][j] = Tile(k)
                         break
     
     
     def createWeather(self):
+        
         for i in range(self.width):
             for j in range(self.height):
-                if self.values[i][j] > moisture and self.level[i][j].generator:
+                if self.mapProfile.weather[i][j] > moisture and self.level[i][j].generator:
                     self.level[i][j].weather = "thunder"
                 
     
@@ -101,7 +73,7 @@ class Map:
         
         for i in range(self.width):
             for j in range(self.height):
-                if self.genmap[i][j] < chance and not self.level[i][j].id_tile in ["water", "mountain"]:
+                if self.mapProfile.genmap[i][j] < chance and not self.level[i][j].id_tile in ["water", "mountain"]:
                     self.level[i][j].generator = True
                     self.cntGens += 1
     
@@ -119,11 +91,12 @@ class Map:
                     
     def readMap(self):
                 
-        self.exit = self.exit_coords
-        self.level[self.exit_coords[0]][self.exit_coords[1]] = Tile("grass")
+        self.exit = self.exitCoords
+        self.level[self.exitCoords[0]][self.exitCoords[1]] = Tile("grass")
         
         for i in range(self.width):
             for j in range(self.height):
+                
                 tile = self.level[i][j]
                 tile_type = tile.id_tile
                 
@@ -160,7 +133,7 @@ class Map:
         
         cntGen = 0
         self.edges, self.gens = [], [self.entry, self.exit]
-        
+        self.genMovementPoints = 0
         
         for i in range(self.width):
             for j in range(self.height):
@@ -174,18 +147,19 @@ class Map:
             initDijkstra(self.width, self.height)
             g = self.gens[gen]
             res = Dijkstra((g[0], g[1]), self.matrix)
-                
             
             for i in range(len(res)):
                 for j in range(len(res[i])):
                     if (i, j) in self.gens and (i, j) != self.gens[gen]:
-                        self.edges.append(Edge(gen, self.gens.index((i, j)), res[i][j]))
-                        
+                        self.edges.append(Edge(gen, self.gens.index((i, j)), res[i][j] - self.matrix[i][j]))
+        
+        for gen in set(self.gens):
+            self.genMovementPoints += self.matrix[gen[0]][gen[1]]
                         
     def getKruskal(self):
         
         initDSU(len(self.gens))
-        return Kruskal(self.edges)
+        return Kruskal(self.edges) + self.genMovementPoints
     
     
     def playerInteract(self):
