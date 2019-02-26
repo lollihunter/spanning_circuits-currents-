@@ -15,7 +15,7 @@ terrainData = cfgRead()
 
 try: # Try to read map file data from config; if MAP = -1, then random generate
     path = terrainData["MAP"]
-    assert path != -1
+    assert path != "-1"
 except Exception:
     custom = False
     
