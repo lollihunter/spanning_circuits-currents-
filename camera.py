@@ -16,7 +16,7 @@ class Camera:
                 self.relativex += dx
         
             else:
-                for group in SPRITES:
+                for group in self.sprites:
                     for member in group:
                         member.moves(-dx, -dy)                
         else:
@@ -26,7 +26,7 @@ class Camera:
                 self.relativey += dy            
             
             else:
-                for group in SPRITES:
+                for group in self.sprites:
                     for member in group:
                         member.moves(-dx, -dy)
                     
