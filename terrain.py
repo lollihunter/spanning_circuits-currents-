@@ -1,8 +1,8 @@
 properties = {
-    "jungle": (5, True, -1),
-    "water": (1, True, -1),
-    "grass": (1, True, -1),
-    "forest": (2, True, -1),
+    "jungle": (5, True, -0.5),
+    "water": (1, True, -0.5),
+    "grass": (1, True, -0.5),
+    "forest": (2, True, -0.5),
     "desert": (1, True, 0.25),
     "mountain": (10 ** 8, False, 0),
 }

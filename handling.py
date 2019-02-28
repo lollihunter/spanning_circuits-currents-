@@ -7,7 +7,7 @@ from sprites import *
 from math_thingies import get_starting_pixel
 from noise_generation import *
 from cfgReader import *
-
+from time import time
 
 
 custom = True
@@ -22,7 +22,7 @@ except Exception:
 moisture = {"thunder": 0.7}
 overrideConfig(moisture, terrainData)
 moisture = moisture["thunder"]
-
+overrideConfig(worldgen, terrainData)
 
 
 class Map:
@@ -30,13 +30,14 @@ class Map:
     
     def __init__(self, width, height):
         
+        self.worldgen = worldgen
         self.width = width
         self.height = height
         self.cntGens = 0
         self.cntActive = 0
         
         if custom:
-            self.mapProfile, self.exitCoords = from_file(path, self.height, self.width)
+            self.mapProfile, self.exitCoords, self.worldgen = from_file(path, self.height, self.width)
         else:    
             self.exitCoords = (self.width - 1, randint(0, self.height - 1))            
             self.mapProfile = generate(self.height, self.width)
@@ -54,8 +55,8 @@ class Map:
         
         for i in range(self.width):
             for j in range(self.height):
-                for k in worldgen:
-                    if self.mapProfile.value[i][j] < worldgen[k]: 
+                for k in self.worldgen:
+                    if self.mapProfile.value[i][j] < self.worldgen[k]: 
                         self.level[i][j] = Tile(k)
                         break
     
@@ -72,8 +73,10 @@ class Map:
         
         for i in range(self.width):
             for j in range(self.height):
-                if self.mapProfile.genmap[i][j] < chance and not self.level[i][j].id_tile in ["water", "mountain"]:
+                if ((i, j) != self.exitCoords and self.mapProfile.genmap[i][j] < chance
+                    and not self.level[i][j].id_tile in ["water", "mountain"]):
                     self.level[i][j].generator = True
+                    print(i, j)
                     self.cntGens += 1
     
     
@@ -130,6 +133,7 @@ class Map:
         
     def getDijkstra(self):
         
+        a = time()
         cntGen = 0
         self.edges, self.gens = [], [self.entry, self.exit]
         self.genMovementPoints = 0
@@ -140,6 +144,7 @@ class Map:
                 if self.level[i][j].generator is True:
                     self.gens.append((i, j))
                 
+        print(*self.gens)
         
         for gen in range(len(self.gens)):
             
@@ -154,6 +159,7 @@ class Map:
         
         for gen in set(self.gens):
             self.genMovementPoints += self.matrix[gen[0]][gen[1]]
+        print(time() - a)
                         
     def getKruskal(self):
         
@@ -164,6 +170,7 @@ class Map:
     def playerInteract(self):
         
         x, y = self.player.x, self.player.y
+        print(self.level[x][y].id_tile)
         self.player.health = min(100, self.player.health - self.level[x][y].drainEnergy * 100)
         self.player.hp -= self.level[x][y].movementPoints
         if self.level[x][y].id_tile == "water":
@@ -171,7 +178,8 @@ class Map:
         else:
             self.roadmap[x][y] = 1
             self.level[x][y].movementPoints = 0            
-        self.level[x][y].activated = int(0.9 * (self.width + self.height) ** 1.07)
+        self.level[x][y].activated = max(self.width + self.height,
+                                         int(0.4 * (self.width + self.height) ** 1.35))
         for road in roads:
             road.update()
          
